@@ -1,0 +1,15 @@
+{
+  "name": "node-http-all-together",
+  "version": "1.0.0",
+  "description": "a repo used to teach the students vanilla node",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^4.1.1"
+  }
+}
