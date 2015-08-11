@@ -2,9 +2,11 @@
 
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost/');
+mongoose.connect('mongodb://localhost/basketballapp');
 
 var Schema = mongoose.Schema;
+
+var Ownership = require('./ownership');
 
 var playerSchema = new Schema({
 
@@ -38,6 +40,13 @@ var teamSchema = new Schema({
     required: true
   },
   players: [playerSchema]
+});
+
+// dependent destroy substitute
+teamSchema.post('remove', function(team){
+  Ownership.destroy({where : { teamId: team._id.toString()} }).then(function(){
+    console.log('We are in SYNC');
+  });
 });
 
 

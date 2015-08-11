@@ -1,10 +1,16 @@
 var async = require('async');
-var Team = require('../lib/team');
+
+// require our models, both psql and mongodb
+var Team = require('../models/team');
+var User = require('../models/team');
+var Ownership = require('../models/ownership');
+
+// require our mongoose connection explicitly
 var mongoose = require('mongoose');
 
-
+// now we seed the data
 async.series([
-  // first we clear the database of teams. Remeber, this is done ASYNCHRONOUSLY
+  // first we clear the database of teams. Remember, this is done ASYNCHRONOUSLY
   function(done){
     Team.remove({}, done);
   },
@@ -78,6 +84,7 @@ async.series([
         }, done);
       },
     ], function(err, results){
+      console.log(results);
       done();
     });
   }
