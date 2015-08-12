@@ -2,9 +2,8 @@ var async = require('async');
 
 // require our models, both psql and mongodb
 var Team = require('../models/team');
-var User = require('../models/team');
-var Ownership = require('../models/ownership');
-
+var User = require('../models/user');
+var Ownership = require('../models/ownership')
 // require our mongoose connection explicitly
 var mongoose = require('mongoose');
 
@@ -12,7 +11,21 @@ var mongoose = require('mongoose');
 async.series([
   // first we clear the database of teams. Remember, this is done ASYNCHRONOUSLY
   function(done){
-    Team.remove({}, done);
+    async.parallel([
+      function(done){
+        Team.remove({}, done);
+      }, function(done){
+        User.destroy({where: {}}).then(function(){
+          done();
+        });
+      }, function(done){
+        Ownership.destroy({where: {}}).then(function(){
+          done();
+        });
+      }
+    ], function(err, results){
+      done();
+    })
   },
   // next, we add the all of the teams.
   function(done){
@@ -84,8 +97,30 @@ async.series([
         }, done);
       },
     ], function(err, results){
-      console.log(results);
-      done();
+      User.create({
+        firstName: "Fred",
+        lastName: "Durst",
+        email: "limpkickinit@hotmail.com"
+      }).then(function(user){
+        async.parallel([
+          function(done){
+            Ownership.create({
+              userId: user.id,
+              teamId: results[0]._id.toString()
+            }).then(function(){
+              done();
+            })
+          }, function(done){
+            Ownership.create({
+              userId: user.id,
+              teamId: results[1]._id.toString()
+            }).then(function(){
+              done();
+            });
+        }], function(err, results){
+          done();
+        })
+      });
     });
   }
 ], function(err, results){
