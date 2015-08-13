@@ -7,27 +7,50 @@ var Team = require('../models/team');
 var ApplicationController = require('./applicationController');
 
 var PlayersController = function(response, uri){
-  var appCtrl = new ApplicationController(response);
-
-  var _setTeam = function(action){
-    var name = appCtrl.parseURI(uri);
-    Team.findOne({name: {$regex : new RegExp(name, "i")} }, function(error, team) {
-      if (error) { appCtrl.renderError(error); }
-      action(team);
-    });
-  }
-
-  this.create = function(player){
-    _setTeam(function(team){
-      team.players.push(player);
-      team.save(function(err, team) {
-        if (err) { appCtrl.renderError(err); }
-        appCtrl.render(team, {status: 201});
-      });
-    })
-  }
-
-
+  ApplicationController.apply(this, arguments);
 };
 
-module.exports = PlayersController
+PlayersController.prototype = new ApplicationController();
+
+PlayersController.prototype.setTeam = function(action){
+  Team.findOne({name: {$regex : new RegExp(this.params['teamName'], "i")} }, function(error, team) {
+    if (error) {
+      self.renderError(error);
+    } else {
+      action(team);
+    }
+  });
+}
+
+PlayersController.prototype.create = function(request){
+  var self = this;
+  self.gatherRequest(request, function(player){
+    self.setTeam(function(team){
+      team.players.push(player);
+      team.save(function(err, team) {
+        if (err) {
+          self.renderError(err);
+        } else {
+          self.render(team, {status: 201});
+        }
+      });
+    });
+  });
+}
+
+PlayersController.prototype.destroy = function(){
+  var self = this;
+  self.setTeam(function(team){
+    team.update({ $pull: {'players': {'jerseyNumber': self.params['jerseyNumber'] }}}, function(err){
+      if (err) {
+        self.renderError()
+      } else {
+        self.head();
+      }
+    });
+  });
+}
+
+
+
+module.exports = PlayersController;

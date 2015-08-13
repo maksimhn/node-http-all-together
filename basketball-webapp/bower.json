@@ -1,0 +1,21 @@
+{
+  "name": "basketball-webapp",
+  "version": "0.0.0",
+  "homepage": "https://github.com/ga-wdi-boston/node-http-all-together",
+  "authors": [
+    "MaxBlaushild <blaushmild@gmail.com>"
+  ],
+  "main": "index.html",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "handlebars": "~3.0.3",
+    "jquery": "~2.1.4"
+  }
+}

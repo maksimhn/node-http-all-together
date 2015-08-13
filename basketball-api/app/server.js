@@ -3,35 +3,35 @@
 // we import our node modules here
 var http = require('http'),
     url = require('url'),
-    port = 5000;
+    port = 8888;
 
 // we import our controllers here
+var ApplicationController = require('../controllers/applicationController');
 var TeamsController = require('../controllers/teamsController');
 var PlayersController = require('../controllers/playersController');
 var UsersController = require('../controllers/usersController');
+var OwnershipsController = require('../controllers/ownershipsController');
 
 
 // we create our http server instance
 var server = http.createServer(function(request, response){
 
-  var chunkDataBeforeAction = function(controllerAction){
-    var postDataString = "";
-    request.setEncoding('utf8');
-
-    request.on('data', function(dataChunk){
-      postDataString += dataChunk;
-    });
-
-    request.on('end', function(){
-      var parsedData = JSON.parse(postDataString)
-      controllerAction(parsedData);
-    });
-  };
+  // allows cross origin access
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Credentials', true);
+  response.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS, PUT, PATCH, DELETE');
+  response.setHeader('Access-Control-Request-Method', '*');
 
   var responseWith404 = function(){
     response.writeHead(404);
     response.end(JSON.stringify({"error": "You done goofed!"}));
-  };
+  }
+
+  var handleOptions = function(){
+    response.writeHead(200, {'Content-Type' : 'text/plain'});
+    response.end("Pre-flight");
+  }
 
   // we parse the url ....
   var uri = url.parse(request.url, true);
@@ -41,10 +41,10 @@ var server = http.createServer(function(request, response){
       var teamsController = new TeamsController(response, uri);
       switch (request.method) {
         case "GET":
-          teamsController.index();
+          uri.query.id ? teamsController.findByUserID() : teamsController.freeTeams();
           break;
         case "POST":
-          chunkDataBeforeAction(teamsController.create);
+          teamsController.create(response);
           break;
         default:
           responseWith404()
@@ -61,6 +61,9 @@ var server = http.createServer(function(request, response){
         case "DELETE":
           teamsController.destroy()
           break;
+        case "OPTIONS":
+          handleOptions();
+          break;
         default:
           responseWith404()
           break;
@@ -70,7 +73,10 @@ var server = http.createServer(function(request, response){
       var playersController = new PlayersController(response, uri);
       switch (request.method) {
         case "POST":
-          chunkDataBeforeAction(playersController.create);
+          playersController.create(request);
+          break;
+        case "OPTIONS":
+          handleOptions();
           break;
         default:
           responseWith404()
@@ -84,7 +90,7 @@ var server = http.createServer(function(request, response){
           usersController.index();
           break;
         case "POST":
-          chunkDataBeforeAction(usersController.create);
+          usersController.create(request);
           break;
         default:
           responseWith404()
@@ -99,6 +105,51 @@ var server = http.createServer(function(request, response){
           break;
         case "DELETE":
           usersController.destroy();
+          break;
+        case "OPTIONS":
+          handleOptions();
+          break;
+        default:
+          responseWith404()
+          break;
+      }
+      break;
+    case uri.pathname.match(/(\/teams\/)\w+(\/players\/)\d+/) ? uri.pathname.match(/(\/teams\/)\w+(\/players\/)\d+/)[0] : null:
+      var playersController = new PlayersController(response, uri);
+      switch (request.method) {
+        case "DELETE":
+          playersController.destroy();
+          break;
+        case "OPTIONS":
+          handleOptions();
+          break;
+        default:
+          responseWith404()
+          break;
+      }
+      break;
+    case uri.pathname.match(/(\/users\/)\d+(\/teams\/)\w+(\/ownerships)/) ? uri.pathname.match(/(\/users\/)\d+(\/teams\/)\w+(\/ownerships)/)[0] : null:
+      var ownershipsController = new OwnershipsController(response, uri);
+      switch (request.method) {
+        case "DELETE":
+          ownershipsController.destroy();
+          break;
+        case "OPTIONS":
+          handleOptions();
+          break;
+        default:
+          responseWith404()
+          break;
+      }
+      break;
+    case '/ownerships':
+      var ownershipsController = new OwnershipsController(response, uri);
+      switch (request.method) {
+        case "POST":
+          ownershipsController.create(request);
+          break;
+        case "OPTIONS":
+          handleOptions();
           break;
         default:
           responseWith404()

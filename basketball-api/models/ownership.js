@@ -22,6 +22,7 @@ var Ownership = database.define('ownership', {
 });
 
 User.hasMany(Ownership);
+Ownership.belongsTo(User);
 
 Ownership.sync();
 

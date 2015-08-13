@@ -4,45 +4,50 @@
 var User = require('../models/user');
 
 //we import our application controller here
-var ApplicationController = require('./ApplicationController');
+var ApplicationController = require('./applicationController');
 
 var UsersController = function(response, uri){
-  var appCtrl = new ApplicationController(response);
+  ApplicationController.apply(this, arguments);
+};
 
-  var _setUser = function(action){
-    var id = appCtrl.parseURI(uri);
-    console.log('get');
-    User.findById(id).then(function(user){
-      action(user);
-    })
-  }
+UsersController.prototype = new ApplicationController();
 
-  this.index = function(){
-    User.find({}).then(function(users){
-      appCtrl.render(users);
-    })
-  }
+UsersController.prototype.setUser = function(action){
+  User.findById(this.params['userId']).then(function(user){
+    action(user);
+  })
+}
 
-  this.show = function(){
-    _setUser(function(user){
-      appCtrl.render(user);
+UsersController.prototype.index = function(){
+  var self = this;
+  User.findAll({}).then(function(users){
+    self.render(users);
+  });
+}
+
+UsersController.prototype.show = function(){
+  var self = this;
+  this.setUser(function(user){
+    self.render(user);
+  });
+}
+
+UsersController.prototype.destroy = function(){
+  var self = this;
+  this.setUser(function(user){
+    user.destroy().then(function(){
+      self.head();
     });
-  }
+  })
+}
 
-  this.destroy = function(){
-    _setUser(function(user){
-      user.destroy().then(function(){
-        appCtrl.head();
-      });
-    })
-  }
-
-  this.create = function(user){
+UsersController.prototype.create = function(request){
+  var self = this;
+  self.gatherRequest(request, function(user){
     User.create(user).then(function(user){
-      appCtrl.render(user);
+      self.render(user);
     });
-  }
-
+  });
 }
 
 module.exports = UsersController;
