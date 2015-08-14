@@ -13,9 +13,9 @@
 
 ### Introduction
 
- A philosophical debate exists among the global WDI instructional staff. One faction believes that teaching frameworks like Ruby on Rails and Express does not allow students to explore programming fundamentals. The other group believes that using frameworks prepares students for working in the real world and saves enough time to allow students to tackle interesting questions within their project work. Both sides have merit. Today, we will use the javascript principles we discussed earlier this week to roll our own API framework.
+ A philosophical debate exists among the global WDI instructional staff. One faction believes that teaching frameworks like Ruby on Rails and Express does not allow students to explore programming fundamentals. The other group believes that using frameworks prepares students for working in the real world and saves enough time to allow students to tackle interesting questions within their project work. Both sides have merit. Today, we will operate somewhere in between. We will have railsy aspects pre-written for us, but we will also be operating in the wild west.
 
-###  . . . this will suck
+###  The difference
 
 With rails, we get a lot of stuff for free. Our code looks neat and dry because a lot of what makes rails tick happens behind the scenes. Next week, we will get to use a Node framework that, similarly to rails, does much of the heavy lifting for us. We dont't have any of those tools for us today. We need to create our own router, manually parse our uri, manually chunk our incoming data, etc.
 
