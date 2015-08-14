@@ -1,8 +1,7 @@
 'use strict';
 
 // we import our mongoose model here
-var Team = require('../models/team');
-var Ownership = require('../models/ownership');
+var models = require('../models/index');
 
 // we import our Application Controller here
 var ApplicationController = require('./applicationController');
@@ -14,7 +13,7 @@ var TeamsController = function(response, uri){
 TeamsController.prototype = new ApplicationController();
 
 TeamsController.prototype.setTeam = function(action){
-  Team.findOne({name: {$regex : new RegExp(this.params['teamName'], "i")} }, function(error, team) {
+  models.Team.findOne({name: {$regex : new RegExp(this.params['teamName'], "i")} }, function(error, team) {
     if (error) {
       self.renderError(error);
     } else {
@@ -25,7 +24,7 @@ TeamsController.prototype.setTeam = function(action){
 
 TeamsController.prototype.index = function(){
   var self = this;
-  Team.find({}, function(err, teams){
+  models.Team.find({}, function(err, teams){
     if (err) {
       self.renderError(err)
     } else {
@@ -44,7 +43,7 @@ TeamsController.prototype.show = function(){
 TeamsController.prototype.create = function(request){
   var self = this;
   self.gatherRequest(request, function(team){
-    Team.create(team, function(error, team){
+    models.Team.create(team, function(error, team){
       if (error) {
         self.renderError(error);
       } else {
@@ -56,11 +55,11 @@ TeamsController.prototype.create = function(request){
 
 TeamsController.prototype.findByUserID = function(){
   var self = this;
-  Ownership.findAll({where: {userId: self.params['id']} }).then(function(ownerships){
+  models.Ownership.findAll({where: {UserId: self.params['id']} }).then(function(ownerships){
     var ids = ownerships.map(function(ownership){
       return ownership.teamId;
     });
-    Team.find({'_id': { $in: ids }}, function(err, teams){
+    models.Team.find({'_id': { $in: ids }}, function(err, teams){
       if (err) {
         self.renderError();
       } else {
@@ -72,7 +71,7 @@ TeamsController.prototype.findByUserID = function(){
 
 TeamsController.prototype.freeTeams = function(){
   var self = this;
-  Ownership.findAll({where: {} }).then(function(ownerships){
+  models.Ownership.findAll({where: {} }).then(function(ownerships){
     if (ownerships){
       var ids = ownerships.map(function(ownership){
         return ownership.teamId;
@@ -80,7 +79,7 @@ TeamsController.prototype.freeTeams = function(){
     } else {
       ids = [];
     }
-    Team.find({'_id': { $nin: ids}}, function(err, teams){
+    models.Team.find({'_id': { $nin: ids}}, function(err, teams){
       if (err) {
         console.log(err);
         self.renderError();
@@ -106,4 +105,3 @@ TeamsController.prototype.destroy = function(uri){
 }
 
 module.exports = TeamsController;
-

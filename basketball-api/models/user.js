@@ -1,30 +1,35 @@
-var database = require('./index');
 
-var Sequelize = require('sequelize');
+module.exports = function(sequelize, Datatypes){
+  var User = sequelize.define('User', {
+    id: {
+      type: Datatypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+      allowNull: false
+    },
+    firstName: {
+      type: Datatypes.STRING,
+      allowNull: false
+    },
+    lastName: {
+      type: Datatypes.STRING,
+      allowNull: false
+    },
+    email: {
+      type: Datatypes.STRING,
+      allowNull: false,
+      unique: true,
+      validates: {
+        isEmail: true
+      }
+    }
+  }, {
+    classMethods: {
+      associate: function(models){
+        User.hasMany(models.Ownership)
+      }
+    }
+  });
 
-var User = database.define('user', {
-  id: {
-    type: Sequelize.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-    allowNull: false
-  },
-  firstName: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  lastName: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  email: {
-    type: Sequelize.STRING,
-    allowNull: false
-  }
-}, {
-  freezeTableName: true // Model tableName will be the same as the model name
-});
-
-User.sync();
-
-module.exports = User;
+  return User;
+};

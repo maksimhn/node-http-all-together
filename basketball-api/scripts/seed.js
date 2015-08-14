@@ -1,25 +1,22 @@
 var async = require('async');
 
 // require our models, both psql and mongodb
-var Team = require('../models/team');
-var User = require('../models/user');
-var Ownership = require('../models/ownership')
+var models = require('../models/index');
 // require our mongoose connection explicitly
 var mongoose = require('mongoose');
-
 // now we seed the data
 async.series([
   // first we clear the database of teams. Remember, this is done ASYNCHRONOUSLY
   function(done){
     async.parallel([
       function(done){
-        Team.remove({}, done);
+        models.Team.remove({}, done);
       }, function(done){
-        User.destroy({where: {}}).then(function(){
+        models.User.destroy({where: {}}).then(function(){
           done();
         });
       }, function(done){
-        Ownership.destroy({where: {}}).then(function(){
+        models.Ownership.destroy({where: {}}).then(function(){
           done();
         });
       }
@@ -31,7 +28,7 @@ async.series([
   function(done){
     async.parallel([
       function(done){
-        Team.create({
+        models.Team.create({
           name: 'Cavaliers',
           city: 'Cleveland',
           players: [
@@ -64,7 +61,7 @@ async.series([
         }, done);
       },
       function(done){
-        Team.create({
+        models.Team.create({
           name: 'Warriors',
           city: 'Golden State',
           players: [
@@ -97,22 +94,22 @@ async.series([
         }, done);
       },
     ], function(err, results){
-      User.create({
+      models.User.create({
         firstName: "Fred",
         lastName: "Durst",
         email: "limpkickinit@hotmail.com"
       }).then(function(user){
         async.parallel([
           function(done){
-            Ownership.create({
-              userId: user.id,
+            models.Ownership.create({
+              UserId: user.id,
               teamId: results[0]._id.toString()
             }).then(function(){
               done();
             })
           }, function(done){
-            Ownership.create({
-              userId: user.id,
+            models.Ownership.create({
+              UserId: user.id,
               teamId: results[1]._id.toString()
             }).then(function(){
               done();

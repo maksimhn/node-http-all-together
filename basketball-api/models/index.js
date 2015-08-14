@@ -1,11 +1,31 @@
-// we import the sequelize constructor here
-var Sequelize = require('sequelize');
+"use strict";
+// we import our mongodb module and connect to our database here
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/basketballapp');
 
-// we connect to the postgres database here
-var database = new Sequelize('basketballapp', 'blaushmild', 'G00drich1', {
+// we import our sequelize module and connect to our database here
+var Sequelize = require("sequelize");
+var sequelize = new Sequelize('basketballapp', 'maxblaushild', 'G00drich1', {
   host: "localhost",
   port: 5432,
   dialect: 'postgres'
 });
 
-module.exports = database;
+// we glob together all of our models here
+var models = {};
+models.User = sequelize.import('./user');
+models.Ownership = sequelize.import('./ownership');
+models.Team = require('./team')(mongoose, models);
+
+// we create our SQL associations here
+Object.keys(models).forEach(function(modelName) {
+  if ("associate" in models[modelName]) {
+    models[modelName].associate(models);
+  }
+});
+
+// we sync our models' schemas with our psql database
+sequelize.sync();
+
+//we export our database here
+module.exports = models;

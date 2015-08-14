@@ -12,27 +12,9 @@ var PlayersController = require('../controllers/playersController');
 var UsersController = require('../controllers/usersController');
 var OwnershipsController = require('../controllers/ownershipsController');
 
-
+var db = require('../models/index');
 // we create our http server instance
 var server = http.createServer(function(request, response){
-
-  // allows cross origin access
-  response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Credentials', true);
-  response.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, HEAD, OPTIONS, PUT, PATCH, DELETE');
-  response.setHeader('Access-Control-Request-Method', '*');
-
-  var responseWith404 = function(){
-    response.writeHead(404);
-    response.end(JSON.stringify({"error": "You done goofed!"}));
-  }
-
-  var handleOptions = function(){
-    response.writeHead(200, {'Content-Type' : 'text/plain'});
-    response.end("Pre-flight");
-  }
-
   // we parse the url ....
   var uri = url.parse(request.url, true);
   // and pass it through our router
@@ -47,7 +29,7 @@ var server = http.createServer(function(request, response){
           teamsController.create(response);
           break;
         default:
-          responseWith404()
+          teamsController.render404();
           break;
       }
       break;
@@ -62,10 +44,10 @@ var server = http.createServer(function(request, response){
           teamsController.destroy()
           break;
         case "OPTIONS":
-          handleOptions();
+          teamsController.handleOptions();
           break;
         default:
-          responseWith404()
+          teamsController.render404();
           break;
       }
       break;
@@ -76,10 +58,10 @@ var server = http.createServer(function(request, response){
           playersController.create(request);
           break;
         case "OPTIONS":
-          handleOptions();
+          playersController.handleOptions();
           break;
         default:
-          responseWith404()
+          playersController.render404();
           break;
       }
       break;
@@ -93,7 +75,7 @@ var server = http.createServer(function(request, response){
           usersController.create(request);
           break;
         default:
-          responseWith404()
+          usersController.render404();
           break;
       }
       break;
@@ -107,10 +89,10 @@ var server = http.createServer(function(request, response){
           usersController.destroy();
           break;
         case "OPTIONS":
-          handleOptions();
+          usersController.handleOptions();
           break;
         default:
-          responseWith404()
+          usersController.render404();
           break;
       }
       break;
@@ -121,10 +103,10 @@ var server = http.createServer(function(request, response){
           playersController.destroy();
           break;
         case "OPTIONS":
-          handleOptions();
+          playersController.handleOptions();
           break;
         default:
-          responseWith404()
+          playersController.render404();
           break;
       }
       break;
@@ -135,10 +117,10 @@ var server = http.createServer(function(request, response){
           ownershipsController.destroy();
           break;
         case "OPTIONS":
-          handleOptions();
+          ownershipsController.handleOptions();
           break;
         default:
-          responseWith404()
+          ownershipsController.render404();
           break;
       }
       break;
@@ -149,15 +131,16 @@ var server = http.createServer(function(request, response){
           ownershipsController.create(request);
           break;
         case "OPTIONS":
-          handleOptions();
+          ownershipsController.handleOptions();
           break;
         default:
-          responseWith404()
+          ownershipsController.render404();
           break;
       }
       break;
     default:
-      responseWith404()
+      var applicationController = new ApplicationController(response, uri);
+      applicationController.render404();
       break;
   }
 
@@ -167,6 +150,3 @@ var server = http.createServer(function(request, response){
 server.listen(port, function(){
   console.log('We are a go!!!!!!');
 });
-
-
-

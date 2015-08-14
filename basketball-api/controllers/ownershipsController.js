@@ -1,9 +1,7 @@
 'use strict';
 
 // we import our ownership model
-var Ownership = require('../models/ownership');
-
-var Team = require('../models/team');
+var models = require('../models/index');
 
 //we import our application controller constructor here
 var ApplicationController = require('./applicationController');
@@ -16,8 +14,8 @@ OwnershipsController.prototype = new ApplicationController();
 
 OwnershipsController.prototype.setOwnership = function(action){
   var self = this;
-  Team.find({name: self.params['teamName']}, function(err, team){
-    Ownership.findOne({userid: self.params['id'], teamId: team._id}).then(function(ownership){
+  models.Team.find({name: self.params['teamName']}, function(err, team){
+    models.Ownership.findOne({UserId: self.params['id'], teamId: team._id}).then(function(ownership){
       action(ownership);
     });
   });
@@ -35,9 +33,9 @@ OwnershipsController.prototype.destroy = function(){
 OwnershipsController.prototype.create = function(request){
   var self = this;
   self.gatherRequest(request, function(postData){
-    Team.findOne({name: postData['teamName']}, function(err, team){
+    models.Team.findOne({name: postData['teamName']}, function(err, team){
       console.log(team);
-      Ownership.create({userId: postData['userId'], teamId: team._id.toString()}).then(function(ownership){
+      models.Ownership.create({UserId: postData['userId'], teamId: team._id.toString()}).then(function(ownership){
         self.render(ownership, {status: 201});
       });
     });
@@ -45,5 +43,3 @@ OwnershipsController.prototype.create = function(request){
 }
 
 module.exports = OwnershipsController;
-
-

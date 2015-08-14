@@ -1,7 +1,7 @@
 'use strict';
 
 // we import our mongoose model here
-var User = require('../models/user');
+var models = require('../models/index');
 
 //we import our application controller here
 var ApplicationController = require('./applicationController');
@@ -13,15 +13,19 @@ var UsersController = function(response, uri){
 UsersController.prototype = new ApplicationController();
 
 UsersController.prototype.setUser = function(action){
-  User.findById(this.params['userId']).then(function(user){
+  models.User.findById(this.params['userId']).then(function(user){
     action(user);
-  })
+  }, function(err){
+    self.renderError(err);
+  });
 }
 
 UsersController.prototype.index = function(){
   var self = this;
-  User.findAll({}).then(function(users){
+  models.User.findAll({}).then(function(users){
     self.render(users);
+  }, function(err){
+    self.renderError(err);
   });
 }
 
@@ -37,6 +41,8 @@ UsersController.prototype.destroy = function(){
   this.setUser(function(user){
     user.destroy().then(function(){
       self.head();
+    }, function(err){
+      self.renderError(err);
     });
   })
 }
@@ -44,8 +50,10 @@ UsersController.prototype.destroy = function(){
 UsersController.prototype.create = function(request){
   var self = this;
   self.gatherRequest(request, function(user){
-    User.create(user).then(function(user){
+    models.User.create(user).then(function(user){
       self.render(user);
+    }, function(err){
+      self.renderError(err);
     });
   });
 }

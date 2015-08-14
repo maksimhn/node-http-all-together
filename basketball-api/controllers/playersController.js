@@ -1,7 +1,7 @@
 'use strict';
 
 // we import our mongoose model here
-var Team = require('../models/team');
+var models = require('../models/index');
 
 //we import our application controller constructor here
 var ApplicationController = require('./applicationController');
@@ -13,7 +13,7 @@ var PlayersController = function(response, uri){
 PlayersController.prototype = new ApplicationController();
 
 PlayersController.prototype.setTeam = function(action){
-  Team.findOne({name: {$regex : new RegExp(this.params['teamName'], "i")} }, function(error, team) {
+  models.findOne({name: {$regex : new RegExp(this.params['teamName'], "i")} }, function(error, team) {
     if (error) {
       self.renderError(error);
     } else {
