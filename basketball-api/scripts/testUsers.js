@@ -12,12 +12,14 @@ models.User.create({
 });
 
 // .catch verion (1 callback for each version)
-// models.User.create({
-//   firstName: 'Max',
-//   lastName: 'Blaushild',
-//   email: 'piu@piu.com'
-// }).then(function(user){
-//   console.log('User ' + user.firstName + ' has been created. Whoopee!');
-// }).catch(function(err){
-//   console.log(err);
-// });
+
+models.User.create({
+  firstName: 'Max',
+  lastName: 'Blaushild',
+  email: 'hello@hello.com'
+}).then(function(user){
+  console.log('whoppeee!!!!!!! ' + user.firstName + ' has been created!');
+}).catch(function(err){
+  console.log(err);
+});
+
