@@ -46,7 +46,7 @@ Sequelize is an Node.js ORM for SQL databases. Before you start hyperventilating
 Open `psql` in your terminal. Next, lets recreate a new database. Run:
 
 ```SQL
-CREATE DATABASEBASE basketballapp;
+CREATE DATABASE basketballapp;
 ```
 
 If that runs without error, create a new role. We are giving this role login privileges, so we run:
@@ -68,7 +68,7 @@ var Sequelize = require('sequelize');
 Next, let's create a connection to our PostgreSQL database using this syntax:
 
 ```javascript
-var database = new Sequelize('basketballapp', <your-role>, <your-role-pass>, {
+var sequelize = new Sequelize('basketballapp', <your-role>, <your-role-pass>, {
   host: "localhost",
   port: 5432,
   dialect: 'postgres'
@@ -688,12 +688,13 @@ First, let's create a new template for our user show page. Nothing fancy here:
     <h2>{{user.firstName}} {{user.lastName}}</h2>
     <p>{{user.email}}</p>
     <button class="delete-user">Delete User</button>
+    <button class="show-teams">See Teams</button>
     <div id="teams"></div>
   </div>
 </script>
 ```
 
-This time, we stick the data-id inside a div with the id `user-profile`.
+This time, we stick the data-id inside a div with the id `user-profile`. Also, we include a button and an empty div to see a user's teams that we will use later.
 
 Now, we go to our javascript and first add our event handler:
 
@@ -755,7 +756,233 @@ HINTS:
 
 - `Team` is a MONGOOSE model. It's queries take a callback that will fire when the query finishes. You do not need `.then`.
 - Do not forget to end each case on your switchboard with `break;`
-- DOn't overthink it! This exercise was designed to be a railsy as possible
+
+## Facilitating the handoff between Sequelize and Mongoose
+
+Now that we've got basic CRUD set up for two main resources, teams and players, it's time to build out our functionality for our relationship between the two.
+
+Let's start with an Ownership controller. Touch a new file in `controllers` called `ownershipsController.js`.
+
+Our setup will be exactly the same as it was for our past two controllers:
+
+```javascript
+'use strict';
+
+// we import our ownership model
+var models = require('../models/index');
+
+//we import our application controller constructor here
+var ApplicationController = require('./applicationController');
+
+var OwnershipsController = function(response, uri){
+  ApplicationController.apply(this, arguments);
+};
+
+OwnershipsController.prototype = new ApplicationController();
+```
+
+Isn't prototypal inheritance nice?
+
+Now we need to write out some controller actions. Let's just stick with create and destroy. To keep our code dry though, we will also give our `OwnershipsController` protytpe a `.setOwnership` method:
+
+```javascript
+OwnershipsController.prototype.setOwnership = function(action){
+  var self = this;
+  models.Team.find({name: self.params['teamName']}, function(err, team){
+    models.Ownership.findOne({UserId: self.params['id'], teamId: team._id}).then(function(ownership){
+      action(ownership);
+    }).catch(function(err){
+      self.renderError(err);
+    });
+  });
+}
+```
+
+We need to first find our team from the `teamName` we receive in our params hash. Once our team is found, we run the callback that we pass in as the second argument of our query. Runs a Sequelize query to find the ownership with the corresponding user and team ids. If it finds it, it runs the callback we passed in with the ownership passed in. If not, it renders an error.
+
+With this method created, our destroy action becomes much more straight forward to write:
+
+```javascript
+OwnershipsController.prototype.destroy = function(){
+  var self = this;
+  self.setOwnership(function(ownership){
+    ownership.destroy().then(function(){
+      self.head();
+    }).catch(function(err){
+      self.renderError(err);
+    });
+  });
+}
+```
+
+We set the ownership, then destroy it. If the ownership is destroyed successfully, we send out an empty body with a 204 status code. If it is not, we render and error.
+
+Our create action gets a little trickier:
+
+```javascript
+OwnershipsController.prototype.create = function(request){
+  var self = this;
+  self.gatherRequest(request, function(postData){
+    models.Team.findOne({name: postData['teamName']}, function(err, team){
+      models.Ownership.create({UserId: postData['userId'], teamId: team._id.toString()}).then(function(ownership){
+        self.render(ownership, {status: 201});
+      }).catch(function(err){
+        self.renderError(err);
+      });
+    });
+  });
+}
+```
+
+First, use the `gatherRequest` method to chunk together our incoming data. Once the data is chunked, we run our callback which finds the applicable team from it's name. Finally, we create our ownership using our postData and the team object which just retrieved from our mongoDB. If the create works, we render the new ownership with a status of 201. If not, we render the error.
+
+Finally, we need a `TeamsController` action to serve up teams by userID, or we won't be able to see whether or not our `OwnershipsController` actions are working. Let's go over to our teams controller and create:
+
+```javascript
+TeamsController.prototype.findByUserID = function(){
+  var self = this;
+  // we find all of the users ownerships
+  models.Ownership.findAll({where: {UserId: self.params['id']} }).then(function(ownerships){
+    // we create an array of just the ids
+    var ids = ownerships.map(function(ownership){
+      return ownership.teamId;
+    });
+    // we use the $in query selector to look for all teams with ids that are in the array we pass in
+    models.Team.find({'_id': { $in: ids }}, function(err, teams){
+      // we render an error if the team query fails
+      if (err) {
+        self.renderError(err);
+      } else {
+        // we render the teams when the query is successful
+        self.render(teams);
+      }
+    });
+  // we render an error if the ownership query failed
+  }).catch(function(err){
+    self.renderError(err);
+  });
+}
+```
+
+Now we add our ownership routes:
+
+```javascript
+case uri.pathname.match(/(\/users\/)\d+(\/teams\/)\w+(\/ownerships)/) ? uri.pathname.match(/(\/users\/)\d+(\/teams\/)\w+(\/ownerships)/)[0] : null:
+   var ownershipsController = new OwnershipsController(response, uri);
+   switch (request.method) {
+     case "DELETE":
+       ownershipsController.destroy();
+       break;
+     case "OPTIONS":
+       ownershipsController.handleOptions();
+       break;
+     default:
+       ownershipsController.render404();
+       break;
+   }
+   break;
+ case '/ownerships':
+   var ownershipsController = new OwnershipsController(response, uri);
+   switch (request.method) {
+     case "POST":
+       ownershipsController.create(request);
+       break;
+     case "OPTIONS":
+       ownershipsController.handleOptions();
+       break;
+     default:
+       ownershipsController.render404();
+       break;
+   }
+   break;
+```
+
+And adding a little logic to our existing team get route to run our `.findByUserID` action when we recieve a url with a query string:
+
+```javascript
+switch (uri.pathname) {
+    case "/teams":
+      var teamsController = new TeamsController(response, uri);
+      switch (request.method) {
+        case "GET":
+          uri.query.id ? teamsController.findByUserID() : teamsController.index();
+          break;
+```
+
+Frontend-wise, we already have a lot of the html in place to do what we want to do.
+
+We need a template to render our user-owned teams:
+
+```html
+<!-- user team index template -->
+ <script id="user-teams-template" type="x-handlebars-template">
+   {{#each teams}}
+     <div data-name={{name}} class="team">
+         <h2>{{city}} {{name}}</h2>
+         <button class="team-show">See Team</button>
+         <button class="delete-ownership">Disown</button>
+     </div>
+   {{/each}}
+ </script>
+ ```
+
+ Now we need our event handlers for the user team show:
+
+ ```javascript
+ $('#content').on('click', '.show-teams', function(){
+  var $userProfile = $('#user-profile');
+  $.ajax({
+    url: apiURL + '/teams?id=' + $userProfile.data('id'),
+    method: "GET"
+  }).then(function(response){
+    _renderUsersTeams(JSON.parse(response));
+  });
+});
+```
+
+We get the user id from the data attribute stored in the user profile, then we use it to build our query string. Once we get the data back, we pass it into:
+
+```javascript
+var _renderUsersTeams = function(teams){
+   var teamsTemplater = Handlebars.compile($('#user-teams-template').html());
+   var html = teamsTemplater({teams: teams});
+   $('#teams').append(html);
+ }
+ ```
+
+ Last but not least, we need an event handler that will fire when someone wants to disown a team from a user:
+
+ ```javascript
+ $('#content').on('click', '.delete-ownership', function(){
+  var $team = $(this).closest('.team');
+  var $userProfile = $('#user-profile');
+  $.ajax({
+    url: apiURL + '/users/' + $userProfile.data('id') + '/teams/' + $team.data('name') + '/ownerships',
+    method: "DELETE"
+  }).then(function(response){
+    $team.remove();
+  });
+});
+```
+
+We extract the teamName from the nearest 'team' class div, the id from our user profile, then build the appropriate route. If our delete s successful, we remove the team from the DOM.
+
+## YOU DO - LAB TIME PART II
+
+- Create a route and a controller action that will find and render all of the teams that nobody owns.
+- Render those teams on your frontend.
+- Create a form that will repeat for each unclaimed team that will allow you to add that team to a user with a certain ID (picked by a number typed input)
+
+HINTS:
+
+- With mongoose, the `$nin` operator does the exact opposite of the `$in` operator. If you were to run this on a list of all of the ids of all of the ownerships . . .
+
+## References
+
+* The Mongoose API docs at [http://mongoosejs.com/docs/api.html](http://mongoosejs.com/docs/api.html)
+* The Sequelize API docs at [http://docs.sequelizejs.com/en/latest/](http://docs.sequelizejs.com/en/latest/)
+* The HTTP Node.js API docs at [https://nodejs.org/api/http.html](https://nodejs.org/api/http.html)
+
 
 # IF YOURE READING THIS WE MOVED TOO QUICKLY
 ![Raptors Suck](drake.jpg)

@@ -9,3 +9,13 @@ models.User.create({
 }, function(err){
   console.log(err);
 });
+
+models.User.create({
+  firstName: 'Max',
+  lastName: 'Blaushild',
+  email: 'hello@hello.com'
+}).then(function(user){
+  console.log('whoppeee!!!!!!! ' + user.firstName + ' has been created!');
+}).catch(function(err){
+  console.log(err);
+});
